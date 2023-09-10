@@ -9,9 +9,11 @@ import frontmatter
 def get_md_files(content_dir: str) -> list[str]:
     md_files = []
     for root, _, files in os.walk(content_dir):
-        for filename in files:
-            if filename.endswith(".md"):
-                md_files.append(os.path.join(root, filename))
+        md_files.extend(
+            os.path.join(root, filename)
+            for filename in files
+            if filename.endswith(".md")
+        )
     return md_files
 
 
@@ -107,8 +109,7 @@ def convert_other(page: frontmatter.Post) -> frontmatter.Post:
 
     # handle inline assign
     assign_pattern = re.compile(r"{% assign (.*) = (['\"].*) %}\n?")
-    assign = assign_pattern.search(page.content)
-    if assign:
+    if assign := assign_pattern.search(page.content):
         key = assign.group(1)
         value = assign.group(2)
         page[key] = value[1:-1]
@@ -121,14 +122,13 @@ def convert_other(page: frontmatter.Post) -> frontmatter.Post:
 
 
 def write_results(filepath: str, page: frontmatter.Post) -> None:
-    f = open(filepath, "w")
-    if "/includes/" in filepath:
-        # skip front matter for includes
-        data = page.content
-    else:
-        data = frontmatter.dumps(page, sort_keys=False)
-    f.write(data)
-    f.close()
+    with open(filepath, "w") as f:
+        if "/includes/" in filepath:
+            # skip front matter for includes
+            data = page.content
+        else:
+            data = frontmatter.dumps(page, sort_keys=False)
+        f.write(data)
 
 
 if __name__ == "__main__":
